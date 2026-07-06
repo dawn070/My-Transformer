@@ -19,7 +19,7 @@ class Transformer(nn.Module):
 
         self.encoder = Encoder(enc_voc_size, max_len, d_model, ffn_hidden, n_head, 
                  n_layer, drop_prob, device)
-        self.decoder = Decoder(enc_voc_size, max_len, d_model, ffn_hidden, n_head, 
+        self.decoder = Decoder(dec_voc_size, max_len, d_model, ffn_hidden, n_head, 
                  n_layer, drop_prob, device)
         
         self.src_pad_idx = src_pad_idx
@@ -27,7 +27,7 @@ class Transformer(nn.Module):
         self.device = device
 
     # 设置位置填充掩码
-    def make_pad_mask(selc, q, k, pad_idx_q, pad_idx_k):
+    def make_pad_mask(self, q, k, pad_idx_q, pad_idx_k):
         len_q, len_k = q.size(1), k.size(1)
         q = q.ne(pad_idx_q).unsqueeze(1).unsqueeze(3)  # 先判断后匹配
         q = q.repeat(1, 1, 1, len_k)
@@ -37,7 +37,7 @@ class Transformer(nn.Module):
         return mask
     
     # 设置因果掩码，防止未来信息泄露
-    def make_causul_mask(self, q, k):
+    def make_causal_mask(self, q, k):
         len_q, len_k = q.size(1), k.size(1)
         mask = torch.tril(torch.ones(len_q, len_k)).type(torch.BoolTensor).to(self.device)
         return mask
@@ -45,7 +45,7 @@ class Transformer(nn.Module):
     def forward(self, src, trg):
         # 创造填充掩码
         src_mask = self.make_pad_mask(src, src, self.src_pad_idx, self.src_pad_idx)
-        trg_mask = self.make_pad_mask(trg, trg, self.trg_pad_idx, self.trg_pad_idx) * self.make_causul_mask(trg, trg)
+        trg_mask = self.make_pad_mask(trg, trg, self.trg_pad_idx, self.trg_pad_idx) & self.make_causal_mask(trg, trg)
         # 编码-译码
         enc = self.encoder(src, src_mask)
         out = self.decoder(trg, enc, trg_mask, src_mask)

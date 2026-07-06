@@ -67,7 +67,7 @@ class Decoder(nn.Module):
         self.fc = nn.Linear(d_model, dec_voc_size)
 
     def forward(self, dec, enc, t_mask, s_mask):
-        dec = self.embedding(enc)
+        dec = self.embedding(dec)
         for layer in self.layers:
             dec = layer(dec, enc, t_mask, s_mask)
         dec = self.fc(dec)
